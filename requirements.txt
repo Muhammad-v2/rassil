@@ -1,0 +1,6 @@
+aiogram>=3.0.0
+pyrogram>=2.0.0
+TgCrypto
+asyncpg
+psycopg2-binary
+sqlalchemy
