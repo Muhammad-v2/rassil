@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 900px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .view {
+            display: none;
+        }
+        
+        .view.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .account-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .account-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .account-card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .account-card p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .sessions-list {
+            list-style: none;
+        }
+        
+        .session-item {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .session-info {
+            flex: 1;
+        }
+        
+        .session-info strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .session-info small {
+            display: block;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin: 0 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .chats-select {
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .chat-option {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+        }
+        
+        .chat-option input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .chat-option:hover {
+            background: #efefef;
+        }
+        
+        .back-btn {
+            margin-bottom: 15px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .error {
+            background: #ffe0e0;
+            color: #d32f2f;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        .success {
+            background: #e0ffe0;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 600px) {
+            .accounts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tab-buttons {
+                justify-content: space-between;
+            }
+            
+            .tab-btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎛 Session Manager</h1>
+            <p>Управление вашими Telegram аккаунтами</p>
+        </div>
+        
+        <div class="content">
+            <!-- ГЛАВНОЕ МЕНЮ -->
+            <div id="mainView" class="view active">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <button class="btn" onclick="loadAccounts()">🔄 Обновить</button>
+                    <button class="btn btn-secondary" onclick="showAddAccountView()">➕ Добавить аккаунт</button>
+                    <button class="btn btn-secondary" onclick="showAdminsView()">👥 Админы</button>
+                </div>
+                <div id="accountsList" class="accounts-grid"></div>
+            </div>
+
+            <!-- ДОБАВЛЕНИЕ АККАУНТА -->
+            <div id="addAccountView" class="view">
+                <button class="btn btn-secondary back-btn" onclick="showMainView()">⬅️ Назад</button>
+                <h2 style="margin-bottom: 15px;">➕ Добавить аккаунт</h2>
+
+                <div class="tab-buttons">
+                    <button class="tab-btn active" id="tabBtnFile" onclick="switchAddMode('file')">📁 .session файл</button>
+                    <button class="tab-btn" id="tabBtnPhone" onclick="switchAddMode('phone')">📱 Вход по номеру</button>
+                </div>
+
+                <div id="addAccountMsg"></div>
+
+                <!-- Способ 1: загрузка файла -->
+                <form id="addFileForm" onsubmit="submitAddAccount(event)">
+                    <div class="form-group">
+                        <label>Название аккаунта (для себя):</label>
+                        <input type="text" id="newAccountLabel" placeholder="Например: Второй аккаунт" required>
+                    </div>
+                    <div class="form-group">
+                        <label>.session файл:</label>
+                        <input type="file" id="newAccountFile" accept=".session" required>
+                    </div>
+                    <button type="submit" class="btn">✅ Добавить</button>
+                </form>
+
+                <!-- Способ 2: вход по номеру -->
+                <div id="addPhoneForm" style="display:none;">
+                    <div id="phoneStep1">
+                        <div class="form-group">
+                            <label>Название аккаунта (для себя):</label>
+                            <input type="text" id="phoneAccountLabel" placeholder="Например: Второй аккаунт" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Номер телефона (с кодом страны):</label>
+                            <input type="text" id="phoneNumber" placeholder="+79991234567" required>
+                        </div>
+                        <button type="button" class="btn" onclick="startPhoneLogin()">📩 Получить код</button>
+                    </div>
+
+                    <div id="phoneStep2" style="display:none;">
+                        <p style="margin-bottom: 10px; color: #666;">Код отправлен в Telegram/SMS на указанный номер.</p>
+                        <div class="form-group">
+                            <label>Код подтверждения:</label>
+                            <input type="text" id="phoneCode" placeholder="12345" required>
+                        </div>
+                        <button type="button" class="btn" onclick="submitPhoneCode()">✅ Подтвердить код</button>
+                    </div>
+
+                    <div id="phoneStep3" style="display:none;">
+                        <p style="margin-bottom: 10px; color: #666;">На аккаунте включена двухфакторная защита — введите облачный пароль.</p>
+                        <div class="form-group">
+                            <label>Пароль 2FA:</label>
+                            <input type="password" id="phonePassword" required>
+                        </div>
+                        <button type="button" class="btn" onclick="submitPhonePassword()">🔓 Войти</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- АДМИНЫ -->
+            <div id="adminsView" class="view">
+                <button class="btn btn-secondary back-btn" onclick="showMainView()">⬅️ Назад</button>
+                <h2 style="margin-bottom: 15px;">👥 Администраторы</h2>
+                <div id="adminsList"></div>
+                <form onsubmit="submitAddAdmin(event)" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label>Telegram ID нового админа:</label>
+                        <input type="number" id="newAdminId" required>
+                    </div>
+                    <button type="submit" class="btn">➕ Добавить админа</button>
+                </form>
+            </div>
+            
+            <!-- МЕНЮ АККАУНТА -->
+            <div id="accountView" class="view">
+                <button class="btn btn-secondary back-btn" onclick="showMainView()">⬅️ Назад</button>
+                <button class="btn btn-danger back-btn" onclick="deleteCurrentAccount()">🗑 Удалить аккаунт из панели</button>
+                
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('info')">ℹ️ Инфо</button>
+                    <button class="tab-btn" onclick="switchTab('sessions')">📋 Сессии</button>
+                    <button class="tab-btn" onclick="switchTab('messages')">✉️ Сообщения</button>
+                    <button class="tab-btn" onclick="switchTab('profile')">👤 Профиль</button>
+                    <button class="tab-btn" onclick="switchTab('scheduled')">⏰ Расписание</button>
+                </div>
+                
+                <!-- ВКЛ/ВЫКЛ табы -->
+                <div id="infoTab" class="tab-content">
+                    <div id="accountInfo" class="loading">Загружаю...</div>
+                </div>
+                
+                <div id="sessionsTab" class="tab-content" style="display:none;">
+                    <div id="sessionsList" class="loading">Загружаю...</div>
+                </div>
+                
+                <div id="messagesTab" class="tab-content" style="display:none;">
+                    <form onsubmit="sendMessage(event)">
+                        <div class="form-group">
+                            <label>Выберите чаты:</label>
+                            <div id="chatsList" class="chats-select"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Сообщение:</label>
+                            <textarea id="messageText" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">✉️ Отправить</button>
+                    </form>
+                </div>
+                
+                <div id="profileTab" class="tab-content" style="display:none;">
+                    <form onsubmit="updateProfile(event)">
+                        <div class="form-group">
+                            <label>Имя:</label>
+                            <input type="text" id="firstName">
+                        </div>
+                        <div class="form-group">
+                            <label>Фамилия:</label>
+                            <input type="text" id="lastName">
+                        </div>
+                        <div class="form-group">
+                            <label>Username:</label>
+                            <input type="text" id="username">
+                        </div>
+                        <div class="form-group">
+                            <label>Фото профиля:</label>
+                            <input type="file" id="profilePhoto" accept="image/*">
+                            <button type="button" class="btn btn-danger btn-small" onclick="deleteProfilePhoto()">Удалить фото</button>
+                        </div>
+                        <button type="submit" class="btn">💾 Сохранить</button>
+                    </form>
+                </div>
+                
+                <div id="scheduledTab" class="tab-content" style="display:none;">
+                    <form onsubmit="addScheduledMessage(event)">
+                        <div class="form-group">
+                            <label>Выберите чаты:</label>
+                            <div id="scheduledChatsList" class="chats-select"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Сообщение:</label>
+                            <textarea id="scheduledText" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Первая отправка (дата и время):</label>
+                            <input type="datetime-local" id="sendAt">
+                        </div>
+                        <div class="form-group">
+                            <label>Повторять каждые N минут (оставить пусто = отправить один раз):</label>
+                            <input type="number" id="repeatMinutes" min="1" placeholder="60">
+                        </div>
+                        <button type="submit" class="btn">⏰ Добавить</button>
+                    </form>
+                    
+                    <hr style="margin: 20px 0;">
+                    <h3>Запланированные сообщения:</h3>
+                    <div id="scheduledList"></div>
+                </div>
+            </div>
+            
+            <!-- ВСЕ СЕССИИ -->
+            <div id="allSessionsView" class="view">
+                <button class="btn btn-secondary back-btn" onclick="showMainView()">⬅️ Назад</button>
+                <h2>📊 Все сессии</h2>
+                <div id="allSessionsList" class="loading">Загружаю...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentAccountId = null;
+        let tg = window.Telegram?.WebApp || null;
+        let userId = null;
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (tg) {
+                tg.ready();
+                userId = tg.initDataUnsafe?.user?.id;
+            } else {
+                // Для тестирования без Telegram
+                userId = parseInt(localStorage.getItem('testUserId') || '123456789');
+            }
+            loadAccounts();
+        });
+        
+        async function apiCall(endpoint, method = 'POST', data = null) {
+            const options = {
+                method,
+                headers: {
+                    'X-User-ID': userId,
+                    'Content-Type': 'application/json',
+                },
+            };
+            if (data) options.body = JSON.stringify(data);
+            
+            const response = await fetch(endpoint, options);
+            const json = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(json.error || response.statusText);
+            }
+            return json;
+        }
+        
+        async function loadAccounts() {
+            try {
+                const data = await apiCall('/api/accounts');
+                const container = document.getElementById('accountsList');
+                container.innerHTML = '';
+                
+                data.accounts.forEach(acc => {
+                    const card = document.createElement('div');
+                    card.className = 'account-card';
+                    card.onclick = () => showAccountView(acc.id, acc.label);
+                    card.innerHTML = `
+                        <h3>${acc.label}</h3>
+                        <p>📞 ${acc.phone || '—'}</p>
+                        <p>🔗 @${acc.username || '—'}</p>
+                    `;
+                    container.appendChild(card);
+                });
+                
+                // Кнопка для просмотра всех сессий
+                const allBtn = document.createElement('div');
+                allBtn.className = 'account-card';
+                allBtn.style.cursor = 'pointer';
+                allBtn.onclick = () => showAllSessionsView();
+                allBtn.innerHTML = '<h3>📊 Все сессии</h3><p>Просмотр last-active</p>';
+                container.appendChild(allBtn);
+                
+            } catch (e) {
+                alert('Ошибка: ' + e.message);
+            }
+        }
+        
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        }
+        
+        function showMainView() {
+            showView('mainView');
+            loadAccounts();
+        }
+        
+        async function showAccountView(accountId, label) {
+            currentAccountId = accountId;
+            showView('accountView');
+            document.querySelector('.header h1').textContent = `🎛 ${label}`;
+            
+            // Загрузить инфо и чаты
+            switchTab('info');
+            loadAccountInfo();
+            loadDialogs();
+        }
+        
+        async function showAllSessionsView() {
+            showView('allSessionsView');
+            try {
+                const data = await apiCall('/api/all-sessions');
+                const container = document.getElementById('allSessionsList');
+                container.innerHTML = '';
+                
+                if (data.sessions.length === 0) {
+                    container.innerHTML = '<p>Нет активных сессий</p>';
+                    return;
+                }
+                
+                const html = data.sessions.map(s => `
+                    <div class="session-item">
+                        <div class="session-info">
+                            <strong>${s.account_label}</strong>
+                            <small>🖥️ ${s.device}</small>
+                            <small>🌍 ${s.country || '—'}</small>
+                            <small>🕓 ${new Date(s.last_active * 1000).toLocaleString()}</small>
+                        </div>
+                        ${!s.current ? `<button class="btn btn-danger btn-small" onclick="terminateSession(${s.account_id}, ${s.hash})">Завершить</button>` : ''}
+                    </div>
+                `).join('');
+                
+                container.innerHTML = html;
+            } catch (e) {
+                document.getElementById('allSessionsList').innerHTML = `<div class="error">${e.message}</div>`;
+            }
+        }
+        
+        function switchTab(tabName) {
+            // Скрыть все табы
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            // Деактивировать все кнопки
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            // Показать нужный таб и активировать кнопку
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+            event.target.classList.add('active');
+            
+            if (tabName === 'sessions') loadSessions();
+            if (tabName === 'scheduled') loadScheduledMessages();
+        }
+        
+        async function loadAccountInfo() {
+            try {
+                const data = await apiCall(`/api/account/${currentAccountId}`);
+                const info = data.info;
+                document.getElementById('accountInfo').innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="number">${info.first_name} ${info.last_name}</div>
+                            <div class="label">Имя</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number">@${info.username || '—'}</div>
+                            <div class="label">Username</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number">${info.phone || '—'}</div>
+                            <div class="label">Телефон</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="number">${info.is_premium ? '⭐️ Да' : 'Нет'}</div>
+                            <div class="label">Premium</div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                document.getElementById('accountInfo').innerHTML = `<div class="error">${e.message}</div>`;
+            }
+        }
+        
+        async function loadSessions() {
+            try {
+                const data = await apiCall(`/api/sessions/${currentAccountId}`);
+                const container = document.getElementById('sessionsList');
+                container.innerHTML = '';
+                
+                data.sessions.forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'session-item';
+                    const isCurrent = s.current ? ' 🟢 (текущая)' : '';
+                    item.innerHTML = `
+                        <div class="session-info">
+                            <strong>${s.device_model || s.platform}${isCurrent}</strong>
+                            <small>${s.app_name} ${s.app_version}</small>
+                            <small>🌍 ${s.country || '—'} ${s.region ? ', ' + s.region : ''}</small>
+                            <small>🕓 ${new Date(s.date_active * 1000).toLocaleString()}</small>
+                        </div>
+                        ${!s.current ? `<button class="btn btn-danger btn-small" onclick="terminateSession(${currentAccountId}, ${s.hash})">Завершить</button>` : ''}
+                    `;
+                    container.appendChild(item);
+                });
+            } catch (e) {
+                document.getElementById('sessionsList').innerHTML = `<div class="error">${e.message}</div>`;
+            }
+        }
+        
+        async function loadDialogs() {
+            try {
+                const data = await apiCall(`/api/dialogs/${currentAccountId}`);
+                const renderChats = (chats) => chats.map(c => `
+                    <label class="chat-option">
+                        <input type="checkbox" value="${c.chat_id}" class="chat-checkbox">
+                        ${c.is_group ? '👥' : '👤'} ${c.chat_title}
+                    </label>
+                `).join('');
+                
+                document.getElementById('chatsList').innerHTML = `
+                    <strong style="display: block; margin-bottom: 10px;">👤 Личные:</strong>
+                    ${renderChats(data.private)}
+                    <strong style="display: block; margin: 15px 0 10px 0;">👥 Группы:</strong>
+                    ${renderChats(data.groups)}
+                `;
+                
+                document.getElementById('scheduledChatsList').innerHTML = document.getElementById('chatsList').innerHTML;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        async function sendMessage(e) {
+            e.preventDefault();
+            const chatIds = Array.from(document.querySelectorAll('.chat-checkbox:checked')).map(c => parseInt(c.value));
+            const text = document.getElementById('messageText').value;
+            
+            if (chatIds.length === 0) {
+                alert('Выберите хотя бы один чат');
+                return;
+            }
+            
+            try {
+                for (const chatId of chatIds) {
+                    await apiCall('/api/send-message', 'POST', {
+                        account_id: currentAccountId,
+                        chat_id: chatId,
+                        text,
+                    });
+                }
+                alert('✅ Сообщение отправлено');
+                document.getElementById('messageText').value = '';
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+        
+        async function updateProfile(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const username = document.getElementById('username').value;
+            
+            try {
+                await apiCall('/api/update-profile', 'POST', {
+                    account_id: currentAccountId,
+                    first_name: firstName || null,
+                    last_name: lastName || null,
+                    username: username || null,
+                });
+                alert('✅ Профиль обновлён');
+                loadAccountInfo();
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+        
+        async function deleteProfilePhoto() {
+            if (!confirm('Удалить фото профиля?')) return;
+            
+            try {
+                const formData = new FormData();
+                formData.append('account_id', currentAccountId);
+                formData.append('action', 'delete');
+                
+                const response = await fetch('/api/upload-photo', {
+                    method: 'POST',
+                    headers: { 'X-User-ID': userId },
+                    body: formData,
+                });
+                
+                const result = await response.json();
+                alert('✅ Фото удалено');
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+        
+        async function addScheduledMessage(e) {
+            e.preventDefault();
+            const chatIds = Array.from(document.querySelectorAll('#scheduledChatsList input:checked')).map(c => parseInt(c.value));
+            const text = document.getElementById('scheduledText').value;
+            const sendAt = document.getElementById('sendAt').value;
+            const repeatMinutes = parseInt(document.getElementById('repeatMinutes').value) || null;
+            
+            if (chatIds.length === 0) {
+                alert('Выберите хотя бы один чат');
+                return;
+            }
+            
+            try {
+                await apiCall('/api/add-scheduled', 'POST', {
+                    account_id: currentAccountId,
+                    chat_ids: chatIds,
+                    text,
+                    send_at: sendAt ? new Date(sendAt).toISOString() : null,
+                    repeat_minutes: repeatMinutes,
+                });
+                alert('✅ Сообщение добавлено в расписание');
+                document.getElementById('scheduledText').value = '';
+                document.getElementById('sendAt').value = '';
+                document.getElementById('repeatMinutes').value = '';
+                loadScheduledMessages();
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+        
+        async function loadScheduledMessages() {
+            try {
+                const data = await apiCall(`/api/scheduled/${currentAccountId}`);
+                const container = document.getElementById('scheduledList');
+                
+                if (data.messages.length === 0) {
+                    container.innerHTML = '<p>Нет запланированных сообщений</p>';
+                    return;
+                }
+                
+                container.innerHTML = data.messages.map(m => `
+                    <div class="session-item">
+                        <div class="session-info">
+                            <strong>${m.text}</strong>
+                            <small>Чатов: ${m.chat_ids.length}</small>
+                            <small>Повтор: ${m.repeat_minutes ? 'каждые ' + m.repeat_minutes + ' мин' : 'один раз'}</small>
+                            <small>След. отправка: ${m.next_send ? new Date(m.next_send).toLocaleString() : '—'}</small>
+                        </div>
+                        <button class="btn btn-danger btn-small" onclick="cancelScheduled(${m.id})">Отменить</button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        async function cancelScheduled(messageId) {
+            if (!confirm('Отменить это сообщение?')) return;
+            
+            try {
+                await apiCall('/api/cancel-scheduled', 'POST', { message_id: messageId });
+                alert('✅ Отменено');
+                loadScheduledMessages();
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+        
+        function showAddAccountView() {
+            document.getElementById('addAccountMsg').innerHTML = '';
+            switchAddMode('file');
+            // сброс формы входа по номеру на первый шаг
+            document.getElementById('phoneStep1').style.display = 'block';
+            document.getElementById('phoneStep2').style.display = 'none';
+            document.getElementById('phoneStep3').style.display = 'none';
+            currentLoginId = null;
+            showView('addAccountView');
+        }
+
+        function switchAddMode(mode) {
+            document.getElementById('tabBtnFile').classList.toggle('active', mode === 'file');
+            document.getElementById('tabBtnPhone').classList.toggle('active', mode === 'phone');
+            document.getElementById('addFileForm').style.display = mode === 'file' ? 'block' : 'none';
+            document.getElementById('addPhoneForm').style.display = mode === 'phone' ? 'block' : 'none';
+            document.getElementById('addAccountMsg').innerHTML = '';
+        }
+
+        let currentLoginId = null;
+
+        async function startPhoneLogin() {
+            const label = document.getElementById('phoneAccountLabel').value.trim();
+            const phone = document.getElementById('phoneNumber').value.trim();
+            const msgBox = document.getElementById('addAccountMsg');
+
+            if (!label || !phone) {
+                msgBox.innerHTML = '<div class="error">Заполните название и номер телефона</div>';
+                return;
+            }
+
+            msgBox.innerHTML = '<div class="loading">⏳ Отправляю код...</div>';
+
+            try {
+                const result = await apiCall('/api/login/start', 'POST', { phone, label });
+                currentLoginId = result.login_id;
+                msgBox.innerHTML = `<div class="success">✅ ${result.message}</div>`;
+                document.getElementById('phoneStep1').style.display = 'none';
+                document.getElementById('phoneStep2').style.display = 'block';
+            } catch (e) {
+                msgBox.innerHTML = `<div class="error">❌ ${e.message}</div>`;
+            }
+        }
+
+        async function submitPhoneCode() {
+            const code = document.getElementById('phoneCode').value.trim();
+            const msgBox = document.getElementById('addAccountMsg');
+
+            if (!code) {
+                msgBox.innerHTML = '<div class="error">Введите код</div>';
+                return;
+            }
+
+            msgBox.innerHTML = '<div class="loading">⏳ Проверяю код...</div>';
+
+            try {
+                const result = await apiCall('/api/login/code', 'POST', { login_id: currentLoginId, code });
+
+                if (result.password_required) {
+                    msgBox.innerHTML = '<div class="success">Код верный. Требуется пароль 2FA.</div>';
+                    document.getElementById('phoneStep2').style.display = 'none';
+                    document.getElementById('phoneStep3').style.display = 'block';
+                    return;
+                }
+
+                msgBox.innerHTML = `<div class="success">✅ Аккаунт «${result.info.first_name || ''} ${result.info.last_name || ''}» добавлен</div>`;
+                setTimeout(showMainView, 1200);
+            } catch (e) {
+                msgBox.innerHTML = `<div class="error">❌ ${e.message}</div>`;
+            }
+        }
+
+        async function submitPhonePassword() {
+            const password = document.getElementById('phonePassword').value;
+            const msgBox = document.getElementById('addAccountMsg');
+
+            if (!password) {
+                msgBox.innerHTML = '<div class="error">Введите пароль</div>';
+                return;
+            }
+
+            msgBox.innerHTML = '<div class="loading">⏳ Проверяю пароль...</div>';
+
+            try {
+                const result = await apiCall('/api/login/password', 'POST', { login_id: currentLoginId, password });
+                msgBox.innerHTML = `<div class="success">✅ Аккаунт «${result.info.first_name || ''} ${result.info.last_name || ''}» добавлен</div>`;
+                setTimeout(showMainView, 1200);
+            } catch (e) {
+                msgBox.innerHTML = `<div class="error">❌ ${e.message}</div>`;
+            }
+        }
+
+        async function submitAddAccount(e) {
+            e.preventDefault();
+            const label = document.getElementById('newAccountLabel').value;
+            const fileInput = document.getElementById('newAccountFile');
+            const msgBox = document.getElementById('addAccountMsg');
+
+            if (!fileInput.files.length) {
+                msgBox.innerHTML = '<div class="error">Выберите .session файл</div>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('label', label);
+            formData.append('session', fileInput.files[0]);
+
+            msgBox.innerHTML = '<div class="loading">⏳ Проверяю сессию...</div>';
+
+            try {
+                const response = await fetch('/api/add-account', {
+                    method: 'POST',
+                    headers: { 'X-User-ID': userId },
+                    body: formData,
+                });
+                const result = await response.json();
+
+                if (!response.ok || result.error) {
+                    msgBox.innerHTML = `<div class="error">❌ ${result.error || 'Ошибка'}</div>`;
+                    return;
+                }
+
+                msgBox.innerHTML = `<div class="success">✅ Аккаунт «${label}» добавлен: ${result.info.first_name || ''} ${result.info.last_name || ''}</div>`;
+                document.getElementById('newAccountLabel').value = '';
+                fileInput.value = '';
+                setTimeout(showMainView, 1200);
+            } catch (e) {
+                msgBox.innerHTML = `<div class="error">❌ ${e.message}</div>`;
+            }
+        }
+
+        async function deleteCurrentAccount() {
+            if (!confirm('Удалить этот аккаунт из панели? Сама сессия в Telegram останется активной — для выхода используйте раздел «Сессии».')) return;
+
+            try {
+                await apiCall('/api/delete-account', 'POST', { account_id: currentAccountId });
+                alert('✅ Аккаунт удалён из панели');
+                showMainView();
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+
+        async function showAdminsView() {
+            showView('adminsView');
+            try {
+                const data = await apiCall('/api/admins');
+                const container = document.getElementById('adminsList');
+                let html = '';
+                data.super_admins.forEach(id => {
+                    html += `<div class="session-item"><div class="session-info"><strong>🔒 ${id}</strong><small>супер-админ (из переменных окружения)</small></div></div>`;
+                });
+                data.admins.forEach(id => {
+                    html += `<div class="session-item"><div class="session-info"><strong>👤 ${id}</strong></div><button class="btn btn-danger btn-small" onclick="removeAdmin(${id})">Удалить</button></div>`;
+                });
+                container.innerHTML = html || '<p>Нет дополнительных админов</p>';
+            } catch (e) {
+                document.getElementById('adminsList').innerHTML = `<div class="error">${e.message}</div>`;
+            }
+        }
+
+        async function submitAddAdmin(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('newAdminId').value);
+            try {
+                await apiCall('/api/add-admin', 'POST', { admin_id: id });
+                document.getElementById('newAdminId').value = '';
+                showAdminsView();
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+
+        async function removeAdmin(id) {
+            if (!confirm('Удалить этого админа?')) return;
+            try {
+                await apiCall('/api/remove-admin', 'POST', { admin_id: id });
+                showAdminsView();
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+
+        async function terminateSession(accountId, authHash) {
+            if (!confirm('Завершить эту сессию?')) return;
+            
+            try {
+                await apiCall('/api/terminate-session', 'POST', {
+                    account_id: accountId,
+                    auth_hash: authHash,
+                });
+                alert('✅ Сессия завершена');
+                if (accountId === currentAccountId) {
+                    loadSessions();
+                } else {
+                    showAllSessionsView();
+                }
+            } catch (e) {
+                alert('❌ Ошибка: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
