@@ -3,6 +3,7 @@ import logging
 import os
 
 from aiogram import Bot, Dispatcher, Router
+from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram.types import Message, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -90,7 +91,7 @@ async def cmd_del_admin(message: Message):
 async def main():
     await db.init_db()
 
-    bot = Bot(token=os.environ["BOT_TOKEN"], parse_mode="HTML")
+    bot = Bot(token=os.environ["BOT_TOKEN"], default=DefaultBotProperties(parse_mode="HTML"))
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
 
