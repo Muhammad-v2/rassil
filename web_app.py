@@ -6,6 +6,10 @@ import time
 import shutil
 import tempfile
 import uuid
+import hmac
+import hashlib
+import urllib.parse
+from pathlib import Path
 from datetime import datetime, timedelta
 from aiohttp import web
 import aiofiles
@@ -20,6 +24,50 @@ import scheduler as sched
 logger = logging.getLogger(__name__)
 
 ENV_ADMIN_IDS = {int(x) for x in os.environ.get("ADMIN_IDS", "").split(",") if x.strip()}
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+
+
+def validate_telegram_init_data(init_data: str, max_age_seconds: int = 86400) -> dict | None:
+    """
+    Проверяет подпись initData, которую Telegram Web App передаёт на фронтенде.
+    Возвращает распарсенный объект user, если подпись верна и данные не устарели, иначе None.
+    Алгоритм: https://core.telegram.org/bots/webapps#validating-data-received-via-the-web-app
+    """
+    if not init_data or not BOT_TOKEN:
+        return None
+    try:
+        parsed = dict(urllib.parse.parse_qsl(init_data, strict_parsing=True))
+    except ValueError:
+        return None
+
+    received_hash = parsed.pop("hash", None)
+    if not received_hash:
+        return None
+
+    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()))
+    secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
+    computed_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+
+    if not hmac.compare_digest(computed_hash, received_hash):
+        return None
+
+    try:
+        auth_date = int(parsed.get("auth_date", 0))
+    except ValueError:
+        return None
+    if time.time() - auth_date > max_age_seconds:
+        return None
+
+    user_json = parsed.get("user")
+    if not user_json:
+        return None
+    try:
+        return json.loads(user_json)
+    except json.JSONDecodeError:
+        return None
 
 # Незавершённые входы по номеру телефона: login_id -> {client, phone, phone_code_hash, workdir, user_id, created_at}
 _pending_logins: dict[str, dict] = {}
@@ -43,10 +91,11 @@ class WebAppHandler:
     def __init__(self, bot=None):
         self.app = web.Application()
         self.bot = bot  # используется для отправки уведомлений при необходимости
+        STATIC_DIR.mkdir(parents=True, exist_ok=True)
         self.setup_routes()
     
     def setup_routes(self):
-        self.app.router.add_static('/static', path='./static', name='static')
+        self.app.router.add_static('/static', path=str(STATIC_DIR), name='static')
         self.app.router.add_get('/', self.index)
         self.app.router.add_post('/api/accounts', self.get_accounts)
         self.app.router.add_post('/api/account/{aid}', self.get_account_details)
@@ -71,12 +120,31 @@ class WebAppHandler:
         self.app.router.add_post('/api/login/password', self.login_password)
     
     async def index(self, request):
-        return web.FileResponse('./static/index.html')
+        index_path = STATIC_DIR / "index.html"
+        if not index_path.exists():
+            return web.Response(
+                text=(
+                    "index.html не найден на сервере.\n"
+                    "Проверьте, что папка static/ с index.html загружена в репозиторий "
+                    "(рядом с bot.py), а не только сами .py файлы."
+                ),
+                status=500,
+            )
+        return web.FileResponse(str(index_path))
     
     async def get_user_id(self, request) -> int | None:
-        """Извлечь user_id из заголовка X-User-ID (без проверки прав)."""
+        """
+        Извлечь user_id из initData Telegram Web App с проверкой подписи.
+        Заголовок X-Telegram-Init-Data должен содержать сырую строку initData
+        (window.Telegram.WebApp.initData), а не готовый user id — это защищает
+        от подделки ID через devtools/прокси.
+        """
+        init_data = request.headers.get("X-Telegram-Init-Data", "")
+        user = validate_telegram_init_data(init_data)
+        if not user:
+            return None
         try:
-            return int(request.headers.get('X-User-ID', 0))
+            return int(user.get("id"))
         except (TypeError, ValueError):
             return None
 
