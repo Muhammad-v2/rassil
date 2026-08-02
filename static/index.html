@@ -504,25 +504,27 @@
     <script>
         let currentAccountId = null;
         let tg = window.Telegram?.WebApp || null;
-        let userId = null;
+        let telegramInitData = '';
         
         // Инициализация
         document.addEventListener('DOMContentLoaded', async () => {
-            if (tg) {
+            if (tg && tg.initData) {
                 tg.ready();
-                userId = tg.initDataUnsafe?.user?.id;
+                telegramInitData = tg.initData;
+                loadAccounts();
             } else {
-                // Для тестирования без Telegram
-                userId = parseInt(localStorage.getItem('testUserId') || '123456789');
+                document.getElementById('accountsList').innerHTML =
+                    '<div class="error">Не удалось получить данные авторизации Telegram. ' +
+                    'Откройте эту панель через кнопку в официальном приложении Telegram ' +
+                    '(сторонние клиенты вроде Nekogram могут не поддерживать Web App API).</div>';
             }
-            loadAccounts();
         });
         
         async function apiCall(endpoint, method = 'POST', data = null) {
             const options = {
                 method,
                 headers: {
-                    'X-User-ID': userId,
+                    'X-Telegram-Init-Data': telegramInitData,
                     'Content-Type': 'application/json',
                 },
             };
@@ -765,7 +767,7 @@
                 
                 const response = await fetch('/api/upload-photo', {
                     method: 'POST',
-                    headers: { 'X-User-ID': userId },
+                    headers: { 'X-Telegram-Init-Data': telegramInitData },
                     body: formData,
                 });
                 
@@ -956,7 +958,7 @@
             try {
                 const response = await fetch('/api/add-account', {
                     method: 'POST',
-                    headers: { 'X-User-ID': userId },
+                    headers: { 'X-Telegram-Init-Data': telegramInitData },
                     body: formData,
                 });
                 const result = await response.json();
